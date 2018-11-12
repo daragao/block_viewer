@@ -1,8 +1,10 @@
-import BlockViz from './blockviz.js'
-import Store from './store.js'
-import Client from './node.js'
+import 'babel-polyfill';
+import BlockViz from './blockviz'
+import Store from './store'
+import Client from './node'
 
 BlockViz.initDOM()
 
 const clientWSURL = ['ws://localhost:8645'];
-Client.initClientListener(clientWSURL, Store.newBlock, console.error)
+const clients = Client.initClientListener(clientWSURL, Store.newBlock, console.error)
+Client.setDefaultClient(clients[0])
