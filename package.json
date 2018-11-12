@@ -1,0 +1,35 @@
+{
+  "name": "block_viewer",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "babel": "babel --presets es2015 src/js/main.js -o web/js/main.bundle.js",
+    "start": "http-server",
+    "webpack": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daragao/block_viewer.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/daragao/block_viewer/issues"
+  },
+  "homepage": "https://github.com/daragao/block_viewer#readme",
+  "devDependencies": {
+    "@babel/core": "^7.1.5",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0",
+    "@babel/preset-env": "^7.1.5",
+    "@babel/preset-es2015": "^7.0.0-beta.53",
+    "babel": "^6.23.0",
+    "babel-loader": "^8.0.4",
+    "d3": "^5.7.0",
+    "d3-hierarchy": "^1.1.8",
+    "d3-scale": "^2.1.2",
+    "web3": "^1.0.0-beta.36",
+    "webpack": "^4.25.1",
+    "webpack-cli": "^3.1.2"
+  }
+}
