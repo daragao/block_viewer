@@ -1,43 +1,12 @@
 // can't use ES6 until I make a build system
-var data = {
-    "name": "A1",
-    "children": [
-        {
-            "name": "B1",
-            "children": [
-                {
-                    "name": "C1",
-                    "value": 100
-                },
-                {
-                    "name": "C2",
-                    "value": 300
-                },
-                {
-                    "name": "C3",
-                    "value": 200
-                }
-            ]
-        },
-        {
-            "name": "B2",
-            "value": 200
-        }
-    ]
-};
-
-var updateTree = function() {
-    var name = '#'+Math.floor(Math.random()*16777215).toString(16);
-    var value = Math.ceil(Math.random() * 1000);
-    var newEl = { name: name, value: value };
-    data.children.push(newEl);
-    update();
-};
-
+//
 // helpers
 var domain = [0,1000];
-var x = d3.scaleLinear().domain(domain).range([0, 1005]);
-var y = d3.scaleLinear().domain(domain).range([0, 150]);
+//var x = d3.scaleLinear().domain(domain).range([0, 1005]);
+//var y = d3.scaleLinear().domain(domain).range([0, 150]);
+var boundingRectSize = d3.select("#tree").node().getBoundingClientRect();
+var x = d3.scaleLinear().domain(domain).range([0, boundingRectSize.width])
+var y = d3.scaleLinear().domain(domain).range([0, boundingRectSize.height])
 
 var initDOM = function() {
     // Append SVG
@@ -63,13 +32,8 @@ var linksAttr = function(links) {
         .attr('y2', function(d) {return y(d.target.y);});
 };
 
-var update = function() {
-    // transform data into hierarchy
-    var root = d3.hierarchy(data);
-
-    // reduce the size
-    //root.descendants().forEach(function(d) { if(d.depth >= 1) d.children = null; });
-
+// x and y are scaling functions
+var svgDraw = function(root, domain, x, y) {
     // transform root data to have positions
     var treeLayout = d3.tree();
     treeLayout.size([domain[1],domain[1]]);
@@ -105,9 +69,69 @@ var update = function() {
     // links.transition().duration(500).call(linksAttr);
 
     // exit
+    labels.exit().remove();
     nodes.exit().remove();
     links.exit().remove();
+}
+
+var generateRoot = function(data,depth) {
+    // transform data into hierarchy
+    var root = d3.hierarchy(data);
+
+    // reduce the size
+    var newRootArr = [];
+    var highestDepth = root.leaves().reduce(function(prev,v) { return prev > v.depth ? prev : v.depth},Number.MIN_SAFE_INTEGER)
+    if(highestDepth > depth) {
+      root.eachAfter(function(d) {
+        if((highestDepth-depth) === d.depth) {
+          newRootArr.push(d.data);
+        }
+      });
+      root = newRootArr.map(function(r) { return d3.hierarchy(newRootArr[0]); });
+    } else {
+      root = [root]
+    }
+    return root;
+}
+
+var update = function(data,depth) {
+    var rootArr = generateRoot(data, depth)
+    rootArr.forEach(function(r,i,arr) {
+      var maxWidth = boundingRectSize.width / arr.length;
+      var minRange = maxWidth * i;
+      var maxRange = maxWidth * (i + 1);
+      var x = d3.scaleLinear().domain(domain).range([minRange, maxRange])
+      svgDraw(rootArr[0],domain,x,y);
+    });
 };
 
 initDOM();
-update();
+//update();
+
+// ==========================================================================
+// ========================== WEB 3 =========================================
+// ==========================================================================
+
+var rootHash = undefined
+var chain = {}
+var treeChain = []
+var newBlock = function(block) {
+  if(!rootHash) rootHash = block.hash
+  var node = { name: block.hash, parent: block.parentHash, children: [], block }
+  if(!chain[block.hash]) {
+    chain[block.hash] = node
+    if(chain[block.parentHash]) {
+      if(!chain[block.parentHash].children) chain[block.parentHash].children = []
+      chain[block.parentHash].children.push(node)
+    }
+  }
+  if(treeChain.length == 0) {
+    treeChain.push(node)
+    root = treeChain[0];
+  }
+  //console.log(block)
+  update(treeChain[0],20)
+}
+
+const web3 = new Web3('ws://localhost:8645');
+web3.eth.subscribe('newBlockHeaders').on("data", newBlock).on("error", console.error)
