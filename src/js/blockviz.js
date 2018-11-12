@@ -47,7 +47,7 @@ const svgDraw = (root, domain, x, y) => {
     const labels = d3.select('svg g.labels').selectAll('text.label').data(root.descendants(), keyFuncNode);
     labels.enter().append('text').classed('label', true).merge(labels)
         .attr('x', d => x(d.x)).attr('y', d => y(d.y))
-        .text(d => d.data.name + ' - ' + d.data.signer)
+        .text(d => d.data.name.padEnd(66,' ') + ' - ' + d.data.signer)
 
 
     // Links
