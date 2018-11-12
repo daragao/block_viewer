@@ -111,27 +111,69 @@ initDOM();
 // ==========================================================================
 // ========================== WEB 3 =========================================
 // ==========================================================================
+/*
+var sigHash = function(header) {
+	var encodedHeader = rlp.encode([
+		header.parentHash,
+		header.sha3Uncles,
+		header.miner,
+		header.stateRoot,
+		header.transactionsRoot,
+		header.receiptsRoot,
+		header.logsBloom,
+		web3.utils.toBN(header.difficulty),
+		web3.utils.toBN(header.number),
+		header.gasLimit,
+		header.gasUsed,
+		web3.utils.toBN(header.timestamp),
+		header.extraData,
+		header.mixHash,
+		header.nonce,
+	]);
+	return web3.utils.sha3(encodedHeader);
+};
+
+var getBlockSignerAddress = function(header) {
+  var extraVanity = 32
+  var extraSeal = 65 // r(32 bytes) + s(32 bytes) + v(1 byte)
+
+  var signature = '0x' + header.extraData.slice(-(extraSeal*2))
+  var extraDataUnsigned = header.extraData.slice(0,header.extraData.length-(extraSeal*2))//.padEnd(header.extraData.length,0)
+
+  var blockHeaderNoSignature = Object.assign({},header, {extraData: extraDataUnsigned})
+  var blockHashNoSignature = sigHash(blockHeaderNoSignature)
+
+  var unsignedBlockBuffer = Buffer.from(blockHashNoSignature.slice(2),'hex')
+
+  var signerAddressPromise = web3.eth.accounts.recover(blockHashNoSignature, signature, true)
+  return signerAddressPromise
+}
+*/
 
 var rootHash = undefined
 var chain = {}
 var treeChain = []
 var newBlock = function(block) {
   if(!rootHash) rootHash = block.hash
-  var node = { name: block.hash, parent: block.parentHash, children: [], block }
   if(!chain[block.hash]) {
+    var node = { name: block.hash, parent: block.parentHash, children: [], block }
+    //getBlockSignerAddress(block).then(function(addr) { node.signer = addr; });
     chain[block.hash] = node
     if(chain[block.parentHash]) {
       if(!chain[block.parentHash].children) chain[block.parentHash].children = []
       chain[block.parentHash].children.push(node)
     }
+    if(treeChain.length == 0) {
+      treeChain.push(node)
+      root = treeChain[0];
+    }
+    //console.log(block)
+    update(treeChain[0],20)
   }
-  if(treeChain.length == 0) {
-    treeChain.push(node)
-    root = treeChain[0];
-  }
-  //console.log(block)
-  update(treeChain[0],20)
 }
 
-const web3 = new Web3('ws://localhost:8645');
-web3.eth.subscribe('newBlockHeaders').on("data", newBlock).on("error", console.error)
+var clientWSURL = ['ws://localhost:8645'];
+clientWSURL.forEach(function(url) {
+  var web3 = new Web3(url);
+  web3.eth.subscribe('newBlockHeaders').on("data", newBlock).on("error", console.error)
+});
